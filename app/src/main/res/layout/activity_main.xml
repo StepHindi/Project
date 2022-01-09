@@ -7,20 +7,6 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <EditText
-        android:id="@+id/editTextTime_Min"
-        android:layout_width="313dp"
-        android:layout_height="74dp"
-        android:autofillHints=""
-        android:ems="10"
-        android:hint="@string/enter_time_in_minutes"
-        android:inputType="time"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.911"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.515" />
 
     <Button
         android:id="@+id/button_run"
@@ -29,10 +15,10 @@
         android:text="@string/run"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.063"
+        app:layout_constraintHorizontal_bias="0.049"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.166" />
+        app:layout_constraintVertical_bias="0.284" />
 
     <Button
         android:id="@+id/button_cancel"
@@ -41,22 +27,50 @@
         android:text="@string/cancel"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.949"
+        app:layout_constraintHorizontal_bias="0.937"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.284" />
+
+    <EditText
+        android:id="@+id/editTextTimeHours"
+        android:layout_width="90dp"
+        android:layout_height="48dp"
+        android:ems="10"
+        android:hint="HH"
+        android:inputType="time"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.049"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.167" />
+
+    <EditText
+        android:id="@+id/editTextTimeMin"
+        android:layout_width="90dp"
+        android:layout_height="48dp"
+        android:ems="10"
+        android:hint="MM"
+        android:inputType="time"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/editTextTimeSeconds"
+        app:layout_constraintStart_toEndOf="@+id/editTextTimeHours"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.17" />
+
+    <EditText
+        android:id="@+id/editTextTimeSeconds"
+        android:layout_width="90dp"
+        android:layout_height="48dp"
+        android:ems="10"
+        android:hint="SS"
+        android:inputType="time"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.948"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.166" />
-
-    <TextView
-        android:id="@+id/timeShower"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="69dp"
-        android:text=""
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/button_cancel"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toEndOf="@+id/button_run"
-        app:layout_constraintTop_toBottomOf="@+id/editTextTime_Min"
-        app:layout_constraintVertical_bias="0.076" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -58,9 +58,34 @@ public class MainActivity extends AppCompatActivity {
                 timer.cancel();
             }
             timer = new Timer();
-            String text = binding.editTextTime.getText().toString();
-            if (!text.equals("")) {
-                long time = Long.parseLong(text) * 1000 * 60;
+            long time_hours;
+            long time_sec;
+            long time_min;
+            String text_min = binding.editTextTimeMin.getText().toString();
+            String text_hours = binding.editTextTimeHours.getText().toString();
+            String text_sec = binding.editTextTimeSeconds.getText().toString();
+            if (!text_min.equals("")) {
+                time_min = Long.parseLong(text_min) * 1000 * 60;
+            }
+            else {
+                time_min = 0;
+            }
+            if (!text_sec.equals("")) {
+                time_sec = Long.parseLong(text_sec) * 1000;
+            }
+            else {
+                time_sec = 0;
+            }
+            if (!text_hours.equals("")) {
+                time_hours = Long.parseLong(text_hours) * 1000 * 3600;
+            }
+            else {
+                time_hours = 0;
+            }
+                long time = time_hours + time_sec + time_min;
+            if(time == 0) {
+                return;
+            }
                 Log.i(TAG, "Time: " + time + " wil be start on schedule");
                 timer.schedule(new TimerTask() {
                     @Override
@@ -75,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
                         audioManager.abandonAudioFocus(audioFocusChangeListener);
                     }
                 }, time);
-            }
+
 
         });
         binding.buttonCancel.setOnClickListener(v -> {
