@@ -25,6 +25,7 @@ public class MainActivity extends AppCompatActivity implements Runnable{
     private MediaPlayer mediaPlayer;
     private static final String TAG = "MyActivity_output";
     long time;
+    Thread timerThread;
 
     private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener =
             new AudioManager.OnAudioFocusChangeListener() {
@@ -88,7 +89,8 @@ public class MainActivity extends AppCompatActivity implements Runnable{
                 return;
             }
                 Log.i(TAG, "Time: " + time + " wil be start on schedule");
-                new Thread(MainActivity.this).start();
+                timerThread = new Thread(MainActivity.this);
+                timerThread.start();
                 timer.schedule(new TimerTask() {
                     @Override
                     public void run() {
@@ -110,6 +112,12 @@ public class MainActivity extends AppCompatActivity implements Runnable{
             if (timer != null) {
                 timer.cancel();
                 timer = null;
+                timerThread.interrupt();
+                try {
+                    timerThread.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         });
     }
