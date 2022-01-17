@@ -18,12 +18,13 @@ import java.sql.Time;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements Runnable{
 
     protected ActivityMainBinding binding;
     private Timer timer;
     private MediaPlayer mediaPlayer;
     private static final String TAG = "MyActivity_output";
+    long time;
 
     private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener =
             new AudioManager.OnAudioFocusChangeListener() {
@@ -82,11 +83,12 @@ public class MainActivity extends AppCompatActivity {
             else {
                 time_hours = 0;
             }
-                long time = time_hours + time_sec + time_min;
+                time = time_hours + time_sec + time_min;
             if(time == 0) {
                 return;
             }
                 Log.i(TAG, "Time: " + time + " wil be start on schedule");
+                new Thread(MainActivity.this).start();
                 timer.schedule(new TimerTask() {
                     @Override
                     public void run() {
@@ -110,5 +112,24 @@ public class MainActivity extends AppCompatActivity {
                 timer = null;
             }
         });
+    }
+
+    @Override
+    public void run() {
+        do {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    binding.timeshower.setText("" + (time / 1000));
+                }
+            });
+            time -= 1000;
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        while (time > 0);
     }
 }
