@@ -96,12 +96,18 @@ public class MainActivity extends AppCompatActivity implements Runnable{
                 timer.schedule(new TimerTask() {
                     @Override
                     public void run() {
-                        int audioFocusResult = audioManager.requestAudioFocus(audioFocusChangeListener,
-                                AudioManager.STREAM_MUSIC,
-                                AudioManager.AUDIOFOCUS_GAIN);
-                        if (audioFocusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
-                            return;
-                        mediaPlayer.start();
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                int audioFocusResult = audioManager.requestAudioFocus(audioFocusChangeListener,
+                                        AudioManager.STREAM_MUSIC,
+                                        AudioManager.AUDIOFOCUS_GAIN);
+                                if (audioFocusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+                                    return;
+                                mediaPlayer.start();
+                            }
+                        });
+
                         Log.i(TAG, "Payer started!");
                         audioManager.abandonAudioFocus(audioFocusChangeListener);
                         binding.buttonRunStop.setText(R.string.run);
