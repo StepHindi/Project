@@ -25,6 +25,7 @@ public class MainActivity extends AppCompatActivity implements Runnable{
     private MediaPlayer mediaPlayer;
     private static final String TAG = "MyActivity_output";
     long time;
+    long sec, min, hor, loc_time;
     boolean is_running;
     Thread timerThread;
 
@@ -58,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements Runnable{
         mediaPlayer = MediaPlayer.create(this, R.raw.stopper);
         binding.buttonRunStop.setOnClickListener(v -> {
             if (!is_running) {
-                Log.i(TAG, "Button clicked");
+                Log.i(TAG, "Run clicked");
                 is_running = true;
                 if (timer != null) {
                     timer.cancel();
@@ -68,6 +69,9 @@ public class MainActivity extends AppCompatActivity implements Runnable{
                 long time_hours;
                 long time_sec;
                 long time_min;
+                binding.editTextTimeSeconds.setEnabled(false);
+                binding.editTextTimeMin.setEnabled(false);
+                binding.editTextTimeHours.setEnabled(false);
                 String text_min = binding.editTextTimeMin.getText().toString();
                 String text_hours = binding.editTextTimeHours.getText().toString();
                 String text_sec = binding.editTextTimeSeconds.getText().toString();
@@ -96,16 +100,13 @@ public class MainActivity extends AppCompatActivity implements Runnable{
                 timer.schedule(new TimerTask() {
                     @Override
                     public void run() {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                int audioFocusResult = audioManager.requestAudioFocus(audioFocusChangeListener,
-                                        AudioManager.STREAM_MUSIC,
-                                        AudioManager.AUDIOFOCUS_GAIN);
-                                if (audioFocusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
-                                    return;
-                                mediaPlayer.start();
-                            }
+                        runOnUiThread(() -> {
+                            int audioFocusResult = audioManager.requestAudioFocus(audioFocusChangeListener,
+                                    AudioManager.STREAM_MUSIC,
+                                    AudioManager.AUDIOFOCUS_GAIN);
+                            if (audioFocusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+                                return;
+                            mediaPlayer.start();
                         });
 
                         Log.i(TAG, "Payer started!");
@@ -115,14 +116,22 @@ public class MainActivity extends AppCompatActivity implements Runnable{
                 }, time);
             }
             else {
-                is_running = false;
-                binding.buttonRunStop.setText(R.string.run);
+                Log.i(TAG, "Cancel clicked");
                 if (timer != null) {
                     timer.cancel();
                     timer = null;
+                    time = -1;
                     timerThread.interrupt();
+                    Log.i(TAG, "interruped!");
+                    is_running = false;
+                    binding.buttonRunStop.setText(R.string.run);
+                    binding.editTextTimeSeconds.setText("");
+                    binding.editTextTimeHours.setText("");
+                    binding.editTextTimeMin.setText("");
                     try {
+
                         timerThread.join();
+                        Log.i(TAG, "joined!");
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -132,21 +141,37 @@ public class MainActivity extends AppCompatActivity implements Runnable{
     }
 
     @Override
-    public void run() {}
-//        do {
-//            runOnUiThread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    binding.timeshower.setText("" + (time / 1000));
-//                }
-//            });
-//            time -= 1000;
-//            try {
-//                Thread.sleep(1000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//        while (time > 0);
-//    }
+    public void run() {
+
+        do {
+            loc_time = time / 1000;
+            sec = loc_time % 60;
+            min = loc_time / 60 % 60;
+            hor = loc_time / 3600 % 60;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    binding.editTextTimeHours.setText("" + hor);
+                    binding.editTextTimeMin.setText("" + min);
+                    binding.editTextTimeSeconds.setText("" + sec);
+                }
+            });
+            time -= 1000;
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        while (time >= 0);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                binding.editTextTimeSeconds.setEnabled(true);
+                binding.editTextTimeMin.setEnabled(true);
+                binding.editTextTimeHours.setEnabled(true);
+            }
+        });
+
+    }
 }
