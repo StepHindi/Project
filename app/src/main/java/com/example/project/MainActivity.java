@@ -1,12 +1,18 @@
 package com.example.project;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 
 import com.example.project.databinding.ActivityMainBinding;
@@ -20,14 +26,27 @@ public class MainActivity extends AppCompatActivity{
     private boolean is_running;
     private TimeService timeService;
 
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // Get extra data included in the Intent
+            long hor = intent.getLongExtra("Hours", 0);
+            long min = intent.getLongExtra("Minutes", 0);
+            long sec = intent.getLongExtra("Seconds", 0);
+            setRemainigTime(hor, min, sec);
+            // Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+        }
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         is_running = false;
-
         setContentView(binding.getRoot());
+        registerReceiver(
+                mMessageReceiver, new IntentFilter("TimeSend"));
         binding.buttonRunStop.setOnClickListener(v -> {
             if (!is_running) {
                 Log.i(TAG, "Run clicked");
@@ -69,7 +88,7 @@ public class MainActivity extends AppCompatActivity{
             }
             else {
                 Log.i(TAG, "Cancel clicked");
-                if (timeService.isExecuting()) {
+
                     stopService(new Intent(MainActivity.this, TimeService.class));
                     Log.i(TAG, "interruped!");
                     is_running = false;
@@ -77,7 +96,7 @@ public class MainActivity extends AppCompatActivity{
                     binding.editTextTimeSeconds.setText("");
                     binding.editTextTimeHours.setText("");
                     binding.editTextTimeMin.setText("");
-                }
+
             }
         });
     }

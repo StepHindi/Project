@@ -5,8 +5,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
+
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 public class TimeService extends Service {
     private static final String TAG = "TimeService_output";
@@ -61,9 +64,7 @@ public class TimeService extends Service {
             sec = loc_time % 60;
             min = loc_time / 60 % 60;
             hor = loc_time / 3600 % 60;
-                    mainActivity.runOnUiThread(() -> {
-                        mainActivity.setRemainigTime(hor, min, sec);
-                    });
+            sendMessageToActivity(hor, min, sec);
             loc_time -= 1;
             try {
                 Thread.sleep(1000);
@@ -89,22 +90,15 @@ public class TimeService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mainActivity.time = -1;
-        timeThread.interrupt();
-        try {
-            timeThread.join();
-            Log.i(TAG, "joined!");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
     }
 
-    protected boolean isExecuting() {
-        return timeThread.isAlive();
-    }
-
-    protected void startPlayer() {
-
-
+    private void sendMessageToActivity(long hor, long min, long sec) {
+        Intent intent = new Intent("TimeSend");
+        // You can also include some extra data.
+        intent.putExtra("Hours", hor);
+        intent.putExtra("Minutes", min);
+        intent.putExtra("Seconds", sec);
+        sendBroadcast(intent);
     }
 }
