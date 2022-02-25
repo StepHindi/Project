@@ -1,27 +1,33 @@
 package com.example.project;
 
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 public class TimeService extends Service {
-    private static final String TAG = "TimeService_output";
+    private static final String TAG = "MyActivity_output";
 
     public TimeService() {
     }
-    private MainActivity mainActivity = new MainActivity();
-    protected MediaPlayer mediaPlayer;
-    private TimeThread timeThread;
-    AudioManager audioManager;
-    long sec, min, hor, loc_time;
 
+    private MainActivity mainActivity = new MainActivity();
+    long sec, min, hor, loc_time;
+    private static final int NOTIFY_ID = 101;
+    private static String CHANNEL_ID = "Service channel";
+    protected MediaPlayer mediaPlayer;
+    AudioManager audioManager;
     AudioManager.OnAudioFocusChangeListener audioFocusChangeListener =
             new AudioManager.OnAudioFocusChangeListener() {
                 @Override
@@ -51,20 +57,28 @@ public class TimeService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
 
-        // TODO: Return the communication channel to the service.
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-       // timeThread = new TimeThread((long) intent.getSerializableExtra("time"));
-       // timeThread.start();
+        Log.i(TAG, "Service started");
         loc_time = (long)  intent.getSerializableExtra("time") / 1000;
         do {
             sec = loc_time % 60;
             min = loc_time / 60 % 60;
             hor = loc_time / 3600 % 60;
-            sendMessageToActivity(hor, min, sec);
+            Notification notification = new NotificationCompat.Builder(TimeService.this, CHANNEL_ID)
+                    .setContentTitle("Таймер запущен")
+                    .setContentText("Осталось:" + loc_time)
+                    .build();
+            notification.flags = Notification.FLAG_INSISTENT;
+            NotificationManager notificationManager =
+                    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (notificationManager != null) {
+                notificationManager.notify(NOTIFY_ID, notification);
+                Log.i(TAG, "Notify showed");
+            }
             loc_time -= 1;
             try {
                 Thread.sleep(1000);
@@ -80,7 +94,7 @@ public class TimeService extends Service {
             if (audioFocusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
                 return;
             mediaPlayer.start();
-            Log.i(TAG, "Payer started!");
+            Log.i(TAG, "TS: " + "Payer started!");
             audioManager.abandonAudioFocus(audioFocusChangeListener);
 
         });
@@ -95,10 +109,10 @@ public class TimeService extends Service {
 
     private void sendMessageToActivity(long hor, long min, long sec) {
         Intent intent = new Intent("TimeSend");
-        // You can also include some extra data.
         intent.putExtra("Hours", hor);
         intent.putExtra("Minutes", min);
         intent.putExtra("Seconds", sec);
         sendBroadcast(intent);
+        Log.i(TAG, "Broadcast send");
     }
 }
