@@ -164,9 +164,10 @@ public class MainActivity extends AppCompatActivity implements Runnable{
     protected void onPause() {
         super.onPause();
         Log.i(TAG, "OnPause");
-        Intent intent = new Intent(MainActivity.this, TimeService.class);
+        /*Intent intent = new Intent(MainActivity.this, TimeService.class);
         intent.putExtra("time", time);
-        startService(intent);
+        startService(intent);*/
+        TimeService.start(MainActivity.this, time);
     }
 
 
