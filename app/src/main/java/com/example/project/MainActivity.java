@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements Runnable{
             long hor = intent.getLongExtra("Hours", 0);
             long min = intent.getLongExtra("Minutes", 0);
             long sec = intent.getLongExtra("Seconds", 0);
-            setRemainigTime(hor, min, sec);
+            setRemainTime(hor, min, sec);
             Log.i(TAG, "Broadcast recived");
 
         }
@@ -111,13 +111,12 @@ public class MainActivity extends AppCompatActivity implements Runnable{
             }
             else {
                 Log.i(TAG, "Cancel clicked");
-//                    stopService(new Intent(MainActivity.this, TimeService.class));
                     time = -1;
                     timeThread.interrupt();
                     Log.i(TAG, "interruped!");
                     is_running = false;
                     binding.buttonRunStop.setText(R.string.run);
-                    setRemainigTime(0, 0, 0);
+                    setRemainTime();
                 try {
 
                     timeThread.join();
@@ -136,7 +135,7 @@ public class MainActivity extends AppCompatActivity implements Runnable{
             sec = loc_time % 60;
             min = loc_time / 60 % 60;
             hor = loc_time / 3600 % 60;
-            runOnUiThread(() -> setRemainigTime(hor, min, sec));
+            runOnUiThread(() -> setRemainTime(hor, min, sec));
             time -= 1000;
             try {
                 Thread.sleep(1000);
@@ -145,7 +144,20 @@ public class MainActivity extends AppCompatActivity implements Runnable{
             }
         }
         while (time >= 0);
-        runOnUiThread(() -> timeFieldsActivate(true));
+        runOnUiThread(() -> {
+            setRemainTime();
+            timeFieldsActivate(true);
+            int audioFocusResult = audioManager.requestAudioFocus(audioFocusChangeListener,
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN);
+            if (audioFocusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+                return;
+            mediaPlayer.start();
+            Log.i(TAG, "Payer started!");
+            audioManager.abandonAudioFocus(audioFocusChangeListener);
+            binding.buttonRunStop.setText(R.string.run);
+        });
+        is_running = false;
 
     }
 
@@ -154,10 +166,15 @@ public class MainActivity extends AppCompatActivity implements Runnable{
         binding.editTextTimeMin.setEnabled(needToActivate);
         binding.editTextTimeHours.setEnabled(needToActivate);
     }
-    protected void setRemainigTime(long hor, long min, long sec) {
+    protected void setRemainTime(long hor, long min, long sec) {
         binding.editTextTimeHours.setText("" + hor);
         binding.editTextTimeMin.setText("" + min);
         binding.editTextTimeSeconds.setText("" + sec);
+    }
+    protected void setRemainTime() {
+        binding.editTextTimeHours.setText("");
+        binding.editTextTimeMin.setText("");
+        binding.editTextTimeSeconds.setText("");
     }
 
     @Override
@@ -170,5 +187,9 @@ public class MainActivity extends AppCompatActivity implements Runnable{
         TimeService.start(MainActivity.this, time);
     }
 
-
+    @Override
+    protected void onResume() {
+        super.onResume();
+        stopService(new Intent(MainActivity.this, TimeService.class));
+    }
 }

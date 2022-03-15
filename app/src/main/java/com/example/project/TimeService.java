@@ -14,13 +14,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
-
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import java.text.DecimalFormat;
 import java.util.concurrent.TimeUnit;
-
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
@@ -32,12 +31,13 @@ public class TimeService extends Service {
     public TimeService() {
     }
 
-    private MainActivity mainActivity = new MainActivity();
+
     long sec, min, hor, loc_time;
     private static final int NOTIFY_ID = 101;
     private static String CHANNEL_ID = "Service channel";
     protected MediaPlayer mediaPlayer;
     private Disposable disposable;
+    private DecimalFormat dF = new DecimalFormat("00");
 
     AudioManager audioManager;
     AudioManager.OnAudioFocusChangeListener audioFocusChangeListener =
@@ -95,40 +95,8 @@ public class TimeService extends Service {
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(this::showResultNotification, throwable -> Log.e(TAG, throwable.toString()));
 
-        /*do {
-            sec = loc_time % 60;
-            min = loc_time / 60 % 60;
-            hor = loc_time / 3600 % 60;
-            Notification notification = new NotificationCompat.Builder(TimeService.this, CHANNEL_ID)
-                    .setContentTitle("Таймер запущен")
-                    .setContentText("Осталось:" + loc_time)
-                    .build();
-            //notification.flags = Notification.FLAG_INSISTENT;
-            NotificationManager notificationManager =
-                    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            if (notificationManager != null) {
-                notificationManager.notify(NOTIFY_ID, notification);
-                Log.i(TAG, "Notify showed");
-            }
-            loc_time -= 1;
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        while (loc_time >= 0);*/
-        /*mainActivity.runOnUiThread(() -> {
-            int audioFocusResult = audioManager.requestAudioFocus(audioFocusChangeListener,
-                AudioManager.STREAM_MUSIC,
-                AudioManager.AUDIOFOCUS_GAIN);
-            if (audioFocusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
-                return;
-            mediaPlayer.start();
-            Log.i(TAG, "TS: " + "Payer started!");
-            audioManager.abandonAudioFocus(audioFocusChangeListener);
 
-        });*/
+
         return Service.START_STICKY;
     }
 
@@ -146,10 +114,10 @@ public class TimeService extends Service {
                 .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentTitle("Таймер запущен")
-                .setContentText("Осталось:" + time)
+                .setContentText(buildContentText())
                 .build();
 
-        //notification.flags = Notification.FLAG_INSISTENT;
+
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationManager != null) {
@@ -165,11 +133,19 @@ public class TimeService extends Service {
 
     }
 
+    protected String buildContentText() {
+        if (hor != 0) {
+            return "Осталось: " + dF.format(hor) + ":" + dF.format(min) + ":" + dF.format(sec);
+        }
+
+            return "Осталось: " + dF.format(min) + ":" + dF.format(sec);
+    }
+
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             CharSequence name = getString(R.string.app_name);
             String description = "description";
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            int importance = NotificationManager.IMPORTANCE_NONE;
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
             channel.setDescription(description);
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
@@ -182,20 +158,14 @@ public class TimeService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        Log.i(TAG, "OnDestroy");
         if (disposable != null && !disposable.isDisposed()) {
             disposable.dispose();
+            Log.i(TAG, "Disposed");
         }
 
     }
 
-    private void sendMessageToActivity(long hor, long min, long sec) {
-        Intent intent = new Intent("TimeSend");
-        intent.putExtra("Hours", hor);
-        intent.putExtra("Minutes", min);
-        intent.putExtra("Seconds", sec);
-        sendBroadcast(intent);
-        Log.i(TAG, "Broadcast send");
-    }
 
     public static void start(Context context, long time) {
         Intent serviceIntent = new Intent(context, TimeService.class);
