@@ -62,6 +62,7 @@ public class MainActivity extends AppCompatActivity implements Runnable{
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.i(TAG, "onCreate");
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         is_running = false;
         setContentView(binding.getRoot());

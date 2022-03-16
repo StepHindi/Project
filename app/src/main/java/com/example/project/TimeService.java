@@ -3,6 +3,7 @@ package com.example.project;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -34,10 +35,10 @@ public class TimeService extends Service {
 
     long sec, min, hor, loc_time;
     private static final int NOTIFY_ID = 101;
-    private static String CHANNEL_ID = "Service channel";
+    private static final String CHANNEL_ID = "Service channel";
     protected MediaPlayer mediaPlayer;
     private Disposable disposable;
-    private DecimalFormat dF = new DecimalFormat("00");
+    private final DecimalFormat dF = new DecimalFormat("00");
 
     AudioManager audioManager;
     AudioManager.OnAudioFocusChangeListener audioFocusChangeListener =
@@ -106,6 +107,8 @@ public class TimeService extends Service {
     }
 
     private void showResultNotification(long time) {
+        Intent notifyIntent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notifyIntent, PendingIntent.FLAG_IMMUTABLE);
         sec = time % 60;
         min = time / 60 % 60;
         hor = time / 3600 % 60;
@@ -115,6 +118,7 @@ public class TimeService extends Service {
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentTitle("Таймер запущен")
                 .setContentText(buildContentText())
+                .addAction(0, "Остановить", pendingIntent)
                 .build();
 
 
