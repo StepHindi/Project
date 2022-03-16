@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Project</string>
+    <string name="app_name">Sleep Timer</string>
     <string name="run">Run</string>
     <string name="cancel">Cancel</string>
     <string name="enter_time_in_minutes">Enter time in minutes</string>
