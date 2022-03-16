@@ -70,8 +70,8 @@ public class TimeService extends Service {
         createNotificationChannel();
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
+                .setSmallIcon(R.mipmap.ic_custom_launcher)
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_custom_launcher))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentTitle("Старт")
                 .build();
@@ -113,8 +113,8 @@ public class TimeService extends Service {
         min = time / 60 % 60;
         hor = time / 3600 % 60;
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
+                .setSmallIcon(R.mipmap.ic_custom_launcher)
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_custom_launcher))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentTitle("Таймер запущен")
                 .setContentText(buildContentText())
