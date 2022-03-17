@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.project">
+
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_custom_launcher"
@@ -9,10 +11,15 @@
         android:roundIcon="@mipmap/ic_custom_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.Project">
+        <receiver
+            android:name=".StopUpdateServiceReceiver"
+            android:enabled="true"
+            android:exported="true"></receiver>
+
         <service
             android:name=".TimeService"
             android:enabled="true"
-            android:exported="true"></service>
+            android:exported="true" />
 
         <activity
             android:name=".MainActivity"
@@ -23,7 +30,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
     </application>
 
 </manifest>

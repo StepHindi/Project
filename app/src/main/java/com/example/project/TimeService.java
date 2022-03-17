@@ -107,7 +107,7 @@ public class TimeService extends Service {
     }
 
     private void showResultNotification(long time) {
-        Intent notifyIntent = new Intent(this, MainActivity.class);
+        Intent notifyIntent = new Intent(this, StopUpdateServiceReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notifyIntent, PendingIntent.FLAG_IMMUTABLE);
         sec = time % 60;
         min = time / 60 % 60;
