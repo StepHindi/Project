@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -38,6 +39,8 @@ public class TimeService extends Service {
     private static final String CHANNEL_ID = "Service channel";
     protected MediaPlayer mediaPlayer;
     private Disposable disposable;
+    private SharedPreferences sharedPreferences;
+    private static final String APP_PREFERENCE = "TimePreference";
     private final DecimalFormat dF = new DecimalFormat("00");
 
     AudioManager audioManager;
@@ -66,7 +69,7 @@ public class TimeService extends Service {
 
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         mediaPlayer = MediaPlayer.create(this, R.raw.stopper);
-
+        sharedPreferences = getSharedPreferences(APP_PREFERENCE, Context.MODE_PRIVATE);
         createNotificationChannel();
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
@@ -88,10 +91,11 @@ public class TimeService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         Log.i(TAG, "Service started");
-        loc_time = (long)  intent.getSerializableExtra("time") / 1000;
+        loc_time = (long)  intent.getSerializableExtra("time") + 1;
 
         disposable =
-                Observable.fromCallable(this::updateTimer).subscribeOn(Schedulers.io())
+                Observable.fromCallable(this::updateTimer)
+                        .subscribeOn(Schedulers.io())
                         .repeatWhen(objectObservable -> objectObservable.delay(1, TimeUnit.SECONDS))
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(this::showResultNotification, throwable -> Log.e(TAG, throwable.toString()));
@@ -108,10 +112,11 @@ public class TimeService extends Service {
 
     private void showResultNotification(long time) {
         Intent notifyIntent = new Intent(this, StopUpdateServiceReceiver.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notifyIntent, PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, notifyIntent, PendingIntent.FLAG_IMMUTABLE);
         sec = time % 60;
         min = time / 60 % 60;
         hor = time / 3600 % 60;
+        loc_time = time;
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_custom_launcher)
                 .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_custom_launcher))
@@ -127,6 +132,15 @@ public class TimeService extends Service {
         if (notificationManager != null) {
             if (time <= 0) {
                 stopSelf();
+                int audioFocusResult = audioManager.requestAudioFocus(audioFocusChangeListener,
+                        AudioManager.STREAM_MUSIC,
+                        AudioManager.AUDIOFOCUS_GAIN);
+                if (audioFocusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+                    return;
+                mediaPlayer.start();
+                Log.i(TAG, "Payer started!");
+                audioManager.abandonAudioFocus(audioFocusChangeListener);
+
                 notificationManager.cancel(NOTIFY_ID);
             } else {
                 notificationManager.notify(NOTIFY_ID, notification);
@@ -165,6 +179,9 @@ public class TimeService extends Service {
         Log.i(TAG, "OnDestroy");
         if (disposable != null && !disposable.isDisposed()) {
             disposable.dispose();
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putLong("Time", loc_time);
+            editor.apply();
             Log.i(TAG, "Disposed");
         }
 

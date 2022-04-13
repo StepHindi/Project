@@ -6,23 +6,29 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
-
 import android.util.Log;
-
 import com.example.project.databinding.ActivityMainBinding;
 
-public class MainActivity extends AppCompatActivity implements Runnable{
+import java.util.concurrent.TimeUnit;
 
-    protected ActivityMainBinding binding;
+import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
+public class MainActivity extends AppCompatActivity{
+
+    private ActivityMainBinding binding;
+    protected SharedPreferences sharedPreferences;
     private static final String TAG = "MyActivity_output";
-    protected long time, sec, min, hor, loc_time;
+    private long time, sec, min, hor;
     private boolean is_running;
-    private TimeService timeService;
-    Thread timeThread;
+    private Disposable disposable;
+    private static final String APP_PREFERENCE = "TimePreference";
     protected MediaPlayer mediaPlayer;
     AudioManager audioManager;
     AudioManager.OnAudioFocusChangeListener audioFocusChangeListener =
@@ -45,20 +51,6 @@ public class MainActivity extends AppCompatActivity implements Runnable{
             };
 
 
-    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-
-            long hor = intent.getLongExtra("Hours", 0);
-            long min = intent.getLongExtra("Minutes", 0);
-            long sec = intent.getLongExtra("Seconds", 0);
-            setRemainTime(hor, min, sec);
-            Log.i(TAG, "Broadcast recived");
-
-        }
-    };
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,9 +58,8 @@ public class MainActivity extends AppCompatActivity implements Runnable{
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         is_running = false;
         setContentView(binding.getRoot());
+        sharedPreferences = getSharedPreferences(APP_PREFERENCE, Context.MODE_PRIVATE);
 
-        registerReceiver(
-                mMessageReceiver, new IntentFilter("TimeSend"));
 
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         mediaPlayer = MediaPlayer.create(this, R.raw.stopper);
@@ -78,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements Runnable{
                 Log.i(TAG, "Run clicked");
                 is_running = true;
                 binding.buttonRunStop.setText(R.string.cancel);
+                // optimise in future
                 long time_hours;
                 long time_sec;
                 long time_min;
@@ -85,106 +77,84 @@ public class MainActivity extends AppCompatActivity implements Runnable{
                 String text_hours = binding.editTextTimeHours.getText().toString();
                 String text_sec = binding.editTextTimeSeconds.getText().toString();
                 if (!text_min.equals("")) {
-                    time_min = Long.parseLong(text_min) * 1000 * 60;
+                    time_min = Long.parseLong(text_min) * 60;
                 } else {
                     time_min = 0;
                 }
                 if (!text_sec.equals("")) {
-                    time_sec = Long.parseLong(text_sec) * 1000;
+                    time_sec = Long.parseLong(text_sec) ;
                 } else {
                     time_sec = 0;
                 }
                 if (!text_hours.equals("")) {
-                    time_hours = Long.parseLong(text_hours) * 1000 * 3600;
+                    time_hours = Long.parseLong(text_hours) * 3600;
                 } else {
                     time_hours = 0;
                 }
-                time = time_hours + time_sec + time_min;
+                time = time_hours + time_sec + time_min + 1;
                 if (time == 0) {
                     is_running = false;
                     return;
                 }
-                timeThread = new Thread(MainActivity.this);
-                timeThread.start();
+                disposable =
+                        Observable.fromCallable(this::updateTimer)
+                                .subscribeOn(Schedulers.io())
+                                .repeatWhen(objectObservable -> objectObservable.delay(1, TimeUnit.SECONDS))
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe(this::timeHandler, throwable -> Log.e(TAG, throwable.toString()));
                 timeFieldsActivate(false);
                 Log.i(TAG, "Time: " + time + " wil be start on schedule");
 
             }
             else {
                 Log.i(TAG, "Cancel clicked");
-                    time = -1;
-                    timeThread.interrupt();
-                    Log.i(TAG, "interruped!");
-                    is_running = false;
-                    binding.buttonRunStop.setText(R.string.run);
-                    setRemainTime();
-                try {
-
-                    timeThread.join();
-                    Log.i(TAG, "joined!");
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                zeroTimeActions();
 
             }
         });
     }
-    @Override
-    public void run() {
-        do {
-            loc_time = time / 1000;
-            sec = loc_time % 60;
-            min = loc_time / 60 % 60;
-            hor = loc_time / 3600 % 60;
-            runOnUiThread(() -> setRemainTime(hor, min, sec));
-            time -= 1000;
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        while (time >= 0);
-        runOnUiThread(() -> {
-            setRemainTime();
-            timeFieldsActivate(true);
-            int audioFocusResult = audioManager.requestAudioFocus(audioFocusChangeListener,
-                    AudioManager.STREAM_MUSIC,
-                    AudioManager.AUDIOFOCUS_GAIN);
-            if (audioFocusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
-                return;
-            mediaPlayer.start();
-            Log.i(TAG, "Payer started!");
-            audioManager.abandonAudioFocus(audioFocusChangeListener);
-            binding.buttonRunStop.setText(R.string.run);
-        });
-        is_running = false;
 
+
+    private long updateTimer() {
+        time --;
+        return time;
     }
 
-    protected void timeFieldsActivate(boolean needToActivate) {
+    private void timeFieldsActivate(boolean needToActivate) {
         binding.editTextTimeSeconds.setEnabled(needToActivate);
         binding.editTextTimeMin.setEnabled(needToActivate);
         binding.editTextTimeHours.setEnabled(needToActivate);
     }
-    protected void setRemainTime(long hor, long min, long sec) {
+    private void setRemainTime(long hor, long min, long sec) {
         binding.editTextTimeHours.setText("" + hor);
         binding.editTextTimeMin.setText("" + min);
         binding.editTextTimeSeconds.setText("" + sec);
     }
-    protected void setRemainTime() {
+    private void setRemainTime() {
         binding.editTextTimeHours.setText("");
         binding.editTextTimeMin.setText("");
         binding.editTextTimeSeconds.setText("");
+    }
+
+    private void timeHandler(long time) {
+        if (time <= 0) {
+            if (disposable != null && !disposable.isDisposed()) {
+                disposable.dispose();}
+            startMusicSequence();
+            return;
+        }
+        sec = time % 60;
+        min = time / 60 % 60;
+        hor = time / 3600 % 60;
+        setRemainTime(hor, min, sec);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         Log.i(TAG, "OnPause");
-        /*Intent intent = new Intent(MainActivity.this, TimeService.class);
-        intent.putExtra("time", time);
-        startService(intent);*/
+        if (disposable != null && !disposable.isDisposed()) {
+            disposable.dispose();}
         TimeService.start(MainActivity.this, time);
     }
 
@@ -192,5 +162,43 @@ public class MainActivity extends AppCompatActivity implements Runnable{
     protected void onResume() {
         super.onResume();
         stopService(new Intent(MainActivity.this, TimeService.class));
+        if (sharedPreferences.contains("Time")){
+        time = sharedPreferences.getLong("Time", 0);}
+        Log.i(TAG, "Getted time: " + time);
+        if (time == 0) {
+            zeroTimeActions();
+        }
+        else {
+            disposable =
+                    Observable.fromCallable(this::updateTimer)
+                            .subscribeOn(Schedulers.io())
+                            .repeatWhen(objectObservable -> objectObservable.delay(1, TimeUnit.SECONDS))
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(this::timeHandler, throwable -> Log.e(TAG, throwable.toString()));
+        }
+    }
+    private void startMusicSequence() {
+        setRemainTime();
+        timeFieldsActivate(true);
+        int audioFocusResult = audioManager.requestAudioFocus(audioFocusChangeListener,
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN);
+        if (audioFocusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+            return;
+        mediaPlayer.start();
+        Log.i(TAG, "Payer started!");
+        audioManager.abandonAudioFocus(audioFocusChangeListener);
+        binding.buttonRunStop.setText(R.string.run);
+        is_running = false;
+    }
+
+    private void zeroTimeActions() {
+        if (disposable != null && !disposable.isDisposed()) {
+            disposable.dispose();}
+        Log.i(TAG, "disposed!");
+        is_running = false;
+        binding.buttonRunStop.setText(R.string.run);
+        setRemainTime();
+        timeFieldsActivate(true);
     }
 }
