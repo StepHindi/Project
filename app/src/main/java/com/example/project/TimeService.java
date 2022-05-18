@@ -15,6 +15,7 @@ import android.nfc.Tag;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -34,7 +35,7 @@ public class TimeService extends Service {
     }
 
 
-    long sec, min, hor, loc_time;
+    private long sec, min, hor, loc_time;
     private static final int NOTIFY_ID = 101;
     private static final String CHANNEL_ID = "Service channel";
     protected MediaPlayer mediaPlayer;
@@ -69,7 +70,7 @@ public class TimeService extends Service {
 
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         mediaPlayer = MediaPlayer.create(this, R.raw.stopper);
-        sharedPreferences = getSharedPreferences(APP_PREFERENCE, Context.MODE_PRIVATE);
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         createNotificationChannel();
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
@@ -99,8 +100,6 @@ public class TimeService extends Service {
                         .repeatWhen(objectObservable -> objectObservable.delay(1, TimeUnit.SECONDS))
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(this::showResultNotification, throwable -> Log.e(TAG, throwable.toString()));
-
-
 
         return Service.START_STICKY;
     }
@@ -177,15 +176,17 @@ public class TimeService extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.i(TAG, "OnDestroy");
+
         if (disposable != null && !disposable.isDisposed()) {
             disposable.dispose();
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putLong("Time", loc_time);
-            editor.apply();
+            editor.commit();
             Log.i(TAG, "Disposed");
         }
 
     }
+
 
 
     public static void start(Context context, long time) {

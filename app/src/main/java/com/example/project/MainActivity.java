@@ -10,6 +10,7 @@ import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import com.example.project.databinding.ActivityMainBinding;
 
@@ -58,12 +59,11 @@ public class MainActivity extends AppCompatActivity{
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         is_running = false;
         setContentView(binding.getRoot());
-        sharedPreferences = getSharedPreferences(APP_PREFERENCE, Context.MODE_PRIVATE);
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         mediaPlayer = MediaPlayer.create(this, R.raw.stopper);
-
         binding.buttonRunStop.setOnClickListener(v -> {
             if (!is_running) {
                 Log.i(TAG, "Run clicked");
@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity{
                 } else {
                     time_hours = 0;
                 }
-                time = time_hours + time_sec + time_min + 1;
+                time = time_hours + time_sec + time_min;
                 if (time == 0) {
                     is_running = false;
                     return;
