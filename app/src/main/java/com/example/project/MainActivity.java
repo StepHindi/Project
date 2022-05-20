@@ -3,6 +3,7 @@ package com.example.project;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -26,27 +27,19 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     protected SharedPreferences sharedPreferences;
     private static final String TAG = "MyActivity_output";
-    private long time, sec, min, hor;
+    private long time;
     private boolean isRunning;
     private Disposable disposable;
-    private static final String APP_PREFERENCE = "TimePreference";
     protected MediaPlayer mediaPlayer;
     AudioManager audioManager;
     AudioManager.OnAudioFocusChangeListener audioFocusChangeListener =
             new AudioManager.OnAudioFocusChangeListener() {
                 @Override
                 public void onAudioFocusChange(int focusChange) {
-                    switch (focusChange) {
-                        case AudioManager.AUDIOFOCUS_GAIN:
-                            mediaPlayer.start();
-                            break;
-                        case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                            mediaPlayer.pause();
-                            break;
-                        default:
-                            mediaPlayer.pause();
-                            break;
-
+                    if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
+                        mediaPlayer.start();
+                    } else {
+                        mediaPlayer.pause();
                     }
                 }
             };
@@ -70,28 +63,28 @@ public class MainActivity extends AppCompatActivity {
                 isRunning = true;
                 binding.buttonRunStop.setText(R.string.cancel);
                 // optimise in future
-                long time_hours;
-                long time_sec;
-                long time_min;
-                String text_min = binding.editTextTimeMin.getText().toString();
-                String text_hours = binding.editTextTimeHours.getText().toString();
-                String text_sec = binding.editTextTimeSeconds.getText().toString();
-                if (!text_min.equals("")) {
-                    time_min = Long.parseLong(text_min) * 60;
+                long timeHours;
+                long timeSec;
+                long timeMin;
+                String textMin = binding.editTextTimeMin.getText().toString();
+                String textHours = binding.editTextTimeHours.getText().toString();
+                String textSec = binding.editTextTimeSeconds.getText().toString();
+                if (!textMin.equals("")) {
+                    timeMin = Long.parseLong(textMin) * 60;
                 } else {
-                    time_min = 0;
+                    timeMin = 0;
                 }
-                if (!text_sec.equals("")) {
-                    time_sec = Long.parseLong(text_sec);
+                if (!textSec.equals("")) {
+                    timeSec = Long.parseLong(textSec);
                 } else {
-                    time_sec = 0;
+                    timeSec = 0;
                 }
-                if (!text_hours.equals("")) {
-                    time_hours = Long.parseLong(text_hours) * 3600;
+                if (!textHours.equals("")) {
+                    timeHours = Long.parseLong(textHours) * 3600;
                 } else {
-                    time_hours = 0;
+                    timeHours = 0;
                 }
-                time = time_hours + time_sec + time_min;
+                time = timeHours + timeSec + timeMin;
                 if (time == 0) {
                     isRunning = false;
                     return;
@@ -106,6 +99,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.i(TAG, "Time: " + time + " wil be start on schedule");
 
             } else {
+                time = 0;
                 Log.i(TAG, "Cancel clicked");
                 zeroTimeActions();
 
@@ -125,6 +119,7 @@ public class MainActivity extends AppCompatActivity {
         binding.editTextTimeHours.setEnabled(needToActivate);
     }
 
+    @SuppressLint("SetTextI18n")
     private void setRemainTime(long hor, long min, long sec) {
         binding.editTextTimeHours.setText("" + hor);
         binding.editTextTimeMin.setText("" + min);
@@ -137,12 +132,6 @@ public class MainActivity extends AppCompatActivity {
         binding.editTextTimeSeconds.setText("");
     }
 
-    private long getSharedPreferenceTime() {
-        if (sharedPreferences.contains("Time")) {
-            return sharedPreferences.getLong("Time", 0);
-        }
-        return 0;
-    }
 
     private void timeHandler(long time) {
         if (time <= 0) {
@@ -152,9 +141,9 @@ public class MainActivity extends AppCompatActivity {
             startMusicSequence();
             return;
         }
-        sec = time % 60;
-        min = time / 60 % 60;
-        hor = time / 3600 % 60;
+        long sec = time % 60;
+        long min = time / 60 % 60;
+        long hor = time / 3600 % 60;
         setRemainTime(hor, min, sec);
     }
 
@@ -165,8 +154,8 @@ public class MainActivity extends AppCompatActivity {
         if (disposable != null && !disposable.isDisposed()) {
             disposable.dispose();
         }
-        Log.i(TAG, "Service start conditions:\n SHtime:" + getSharedPreferenceTime() + "\n locTime:" + time);
-        if (getSharedPreferenceTime() > 0 || time > 0) {
+        Log.i(TAG, "Service start conditions:\n SH time: " + sharedPreferences.getLong("Time", 0) + "\n locTime: " + time);
+        if (sharedPreferences.getLong("Time", 0) > 0 || time > 0) {
             TimeService.start(MainActivity.this, time);
         }
     }
@@ -175,8 +164,15 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         stopService(new Intent(MainActivity.this, TimeService.class));
-        time = getSharedPreferenceTime();
-        Log.i(TAG, "Getted time: " + time);
+        if (sharedPreferences.getBoolean("hasStopped", false)) {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putLong("Time", 0);
+            editor.apply();
+            time = 0;
+        } else {
+            time = sharedPreferences.getLong("Time", 0);
+        }
+        Log.i(TAG, "Received time: " + time);
         if (time == 0) {
             zeroTimeActions();
         } else {

@@ -39,7 +39,6 @@ public class TimeService extends Service {
     protected MediaPlayer mediaPlayer;
     private Disposable disposable;
     private SharedPreferences sharedPreferences;
-    private static final String APP_PREFERENCE = "TimePreference";
     private final DecimalFormat dF = new DecimalFormat("00");
 
     AudioManager audioManager;
@@ -47,17 +46,10 @@ public class TimeService extends Service {
             new AudioManager.OnAudioFocusChangeListener() {
                 @Override
                 public void onAudioFocusChange(int focusChange) {
-                    switch (focusChange) {
-                        case AudioManager.AUDIOFOCUS_GAIN:
-                            mediaPlayer.start();
-                            break;
-                        case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                            mediaPlayer.pause();
-                            break;
-                        default:
-                            mediaPlayer.pause();
-                            break;
-
+                    if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
+                        mediaPlayer.start();
+                    } else {
+                        mediaPlayer.pause();
                     }
                 }
             };
@@ -103,7 +95,10 @@ public class TimeService extends Service {
     }
 
     private long updateTimer() {
-        locTime -= 1;
+        locTime --;
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putLong("Time", locTime);
+        editor.apply();
         return locTime;
     }
 
@@ -174,20 +169,9 @@ public class TimeService extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.i(TAG, "OnDestroy");
-        boolean hasStopped = false;
         if (disposable != null && !disposable.isDisposed()) {
             disposable.dispose();
-            if (sharedPreferences.contains("hasStopped")) {
-                hasStopped = sharedPreferences.getBoolean("hasStopped", false);
-            }
-            if (hasStopped) {
-                locTime = 0;
-            }
             Log.i(TAG, "Pref status:\nlocTime: " + sharedPreferences.getLong("Time", 0) + "\nboolean: " + sharedPreferences.getBoolean("hasStopped", false));
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putLong("Time", locTime);
-            editor.putBoolean("hasStopped", false);
-            editor.apply();
             Log.i("SIM_output", "Disposed");
 
         }

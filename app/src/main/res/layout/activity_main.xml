@@ -21,11 +21,38 @@
         app:layout_constraintVertical_bias="0.323" />
 
     <EditText
+        android:id="@+id/editTextTimeSeconds"
+        android:layout_width="90dp"
+        android:layout_height="48dp"
+        android:ems="10"
+        android:hint="@string/hintSS"
+        android:inputType="time"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.948"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.166" />
+
+    <EditText
+        android:id="@+id/editTextTimeMin"
+        android:layout_width="90dp"
+        android:layout_height="48dp"
+        android:ems="10"
+        android:hint="@string/hintMM"
+        android:inputType="time"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.166" />
+
+    <EditText
         android:id="@+id/editTextTimeHours"
         android:layout_width="90dp"
         android:layout_height="48dp"
         android:ems="10"
-        android:hint="HH"
+        android:hint="@string/hintHH"
         android:inputType="time"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -34,31 +61,5 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.167" />
 
-    <EditText
-        android:id="@+id/editTextTimeMin"
-        android:layout_width="90dp"
-        android:layout_height="48dp"
-        android:ems="10"
-        android:hint="MM"
-        android:inputType="time"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/editTextTimeSeconds"
-        app:layout_constraintStart_toEndOf="@+id/editTextTimeHours"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.17" />
-
-    <EditText
-        android:id="@+id/editTextTimeSeconds"
-        android:layout_width="90dp"
-        android:layout_height="48dp"
-        android:ems="10"
-        android:hint="SS"
-        android:inputType="time"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.948"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.166" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -3,4 +3,7 @@
     <string name="run">Run</string>
     <string name="cancel">Cancel</string>
     <string name="enter_time_in_minutes">Enter time in minutes</string>
+    <string name="hintSS">SS</string>
+    <string name="hintMM">MM</string>
+    <string name="hintHH">HH</string>
 </resources>
