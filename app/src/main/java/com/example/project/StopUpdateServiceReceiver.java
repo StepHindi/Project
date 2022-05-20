@@ -14,8 +14,8 @@ public class StopUpdateServiceReceiver extends BroadcastReceiver {
         Intent service = new Intent(context, TimeService.class);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putLong("Time", 0);
-        editor.commit();
+        editor.putBoolean("hasStopped", true);
+        editor.apply();
         context.stopService(service);
     }
 }

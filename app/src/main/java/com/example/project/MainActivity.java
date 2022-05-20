@@ -2,16 +2,16 @@ package com.example.project;
 
 
 import androidx.appcompat.app.AppCompatActivity;
-import android.content.BroadcastReceiver;
+
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
+
 import com.example.project.databinding.ActivityMainBinding;
 
 import java.util.concurrent.TimeUnit;
@@ -21,13 +21,13 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 
-public class MainActivity extends AppCompatActivity{
+public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
     protected SharedPreferences sharedPreferences;
     private static final String TAG = "MyActivity_output";
     private long time, sec, min, hor;
-    private boolean is_running;
+    private boolean isRunning;
     private Disposable disposable;
     private static final String APP_PREFERENCE = "TimePreference";
     protected MediaPlayer mediaPlayer;
@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         Log.i(TAG, "onCreate");
         binding = ActivityMainBinding.inflate(getLayoutInflater());
-        is_running = false;
+        isRunning = false;
         setContentView(binding.getRoot());
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -65,9 +65,9 @@ public class MainActivity extends AppCompatActivity{
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         mediaPlayer = MediaPlayer.create(this, R.raw.stopper);
         binding.buttonRunStop.setOnClickListener(v -> {
-            if (!is_running) {
+            if (!isRunning) {
                 Log.i(TAG, "Run clicked");
-                is_running = true;
+                isRunning = true;
                 binding.buttonRunStop.setText(R.string.cancel);
                 // optimise in future
                 long time_hours;
@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity{
                     time_min = 0;
                 }
                 if (!text_sec.equals("")) {
-                    time_sec = Long.parseLong(text_sec) ;
+                    time_sec = Long.parseLong(text_sec);
                 } else {
                     time_sec = 0;
                 }
@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity{
                 }
                 time = time_hours + time_sec + time_min;
                 if (time == 0) {
-                    is_running = false;
+                    isRunning = false;
                     return;
                 }
                 disposable =
@@ -105,8 +105,7 @@ public class MainActivity extends AppCompatActivity{
                 timeFieldsActivate(false);
                 Log.i(TAG, "Time: " + time + " wil be start on schedule");
 
-            }
-            else {
+            } else {
                 Log.i(TAG, "Cancel clicked");
                 zeroTimeActions();
 
@@ -116,7 +115,7 @@ public class MainActivity extends AppCompatActivity{
 
 
     private long updateTimer() {
-        time --;
+        time--;
         return time;
     }
 
@@ -125,21 +124,31 @@ public class MainActivity extends AppCompatActivity{
         binding.editTextTimeMin.setEnabled(needToActivate);
         binding.editTextTimeHours.setEnabled(needToActivate);
     }
+
     private void setRemainTime(long hor, long min, long sec) {
         binding.editTextTimeHours.setText("" + hor);
         binding.editTextTimeMin.setText("" + min);
         binding.editTextTimeSeconds.setText("" + sec);
     }
+
     private void setRemainTime() {
         binding.editTextTimeHours.setText("");
         binding.editTextTimeMin.setText("");
         binding.editTextTimeSeconds.setText("");
     }
 
+    private long getSharedPreferenceTime() {
+        if (sharedPreferences.contains("Time")) {
+            return sharedPreferences.getLong("Time", 0);
+        }
+        return 0;
+    }
+
     private void timeHandler(long time) {
         if (time <= 0) {
             if (disposable != null && !disposable.isDisposed()) {
-                disposable.dispose();}
+                disposable.dispose();
+            }
             startMusicSequence();
             return;
         }
@@ -154,21 +163,23 @@ public class MainActivity extends AppCompatActivity{
         super.onPause();
         Log.i(TAG, "OnPause");
         if (disposable != null && !disposable.isDisposed()) {
-            disposable.dispose();}
-        TimeService.start(MainActivity.this, time);
+            disposable.dispose();
+        }
+        Log.i(TAG, "Service start conditions:\n SHtime:" + getSharedPreferenceTime() + "\n locTime:" + time);
+        if (getSharedPreferenceTime() > 0 || time > 0) {
+            TimeService.start(MainActivity.this, time);
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         stopService(new Intent(MainActivity.this, TimeService.class));
-        if (sharedPreferences.contains("Time")){
-        time = sharedPreferences.getLong("Time", 0);}
+        time = getSharedPreferenceTime();
         Log.i(TAG, "Getted time: " + time);
         if (time == 0) {
             zeroTimeActions();
-        }
-        else {
+        } else {
             disposable =
                     Observable.fromCallable(this::updateTimer)
                             .subscribeOn(Schedulers.io())
@@ -177,6 +188,7 @@ public class MainActivity extends AppCompatActivity{
                             .subscribe(this::timeHandler, throwable -> Log.e(TAG, throwable.toString()));
         }
     }
+
     private void startMusicSequence() {
         setRemainTime();
         timeFieldsActivate(true);
@@ -186,17 +198,18 @@ public class MainActivity extends AppCompatActivity{
         if (audioFocusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
             return;
         mediaPlayer.start();
-        Log.i(TAG, "Payer started!");
+        Log.i(TAG, "Payer started in activity");
         audioManager.abandonAudioFocus(audioFocusChangeListener);
         binding.buttonRunStop.setText(R.string.run);
-        is_running = false;
+        isRunning = false;
     }
 
     private void zeroTimeActions() {
         if (disposable != null && !disposable.isDisposed()) {
-            disposable.dispose();}
-        Log.i(TAG, "disposed!");
-        is_running = false;
+            disposable.dispose();
+        }
+        Log.i("SIM_output", "disposed!");
+        isRunning = false;
         binding.buttonRunStop.setText(R.string.run);
         setRemainTime();
         timeFieldsActivate(true);

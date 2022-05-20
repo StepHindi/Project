@@ -11,18 +11,16 @@ import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.nfc.Tag;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.util.Log;
+
 import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.text.DecimalFormat;
 import java.util.concurrent.TimeUnit;
+
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
@@ -35,7 +33,7 @@ public class TimeService extends Service {
     }
 
 
-    private long sec, min, hor, loc_time;
+    private long sec, min, hor, locTime;
     private static final int NOTIFY_ID = 101;
     private static final String CHANNEL_ID = "Service channel";
     protected MediaPlayer mediaPlayer;
@@ -92,7 +90,7 @@ public class TimeService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         Log.i(TAG, "Service started");
-        loc_time = (long)  intent.getSerializableExtra("time") + 1;
+        locTime = (long) intent.getSerializableExtra("time") + 1;
 
         disposable =
                 Observable.fromCallable(this::updateTimer)
@@ -105,8 +103,8 @@ public class TimeService extends Service {
     }
 
     private long updateTimer() {
-        loc_time -= 1;
-        return loc_time;
+        locTime -= 1;
+        return locTime;
     }
 
     private void showResultNotification(long time) {
@@ -115,7 +113,7 @@ public class TimeService extends Service {
         sec = time % 60;
         min = time / 60 % 60;
         hor = time / 3600 % 60;
-        loc_time = time;
+        locTime = time;
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_custom_launcher)
                 .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_custom_launcher))
@@ -137,13 +135,13 @@ public class TimeService extends Service {
                 if (audioFocusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
                     return;
                 mediaPlayer.start();
-                Log.i(TAG, "Payer started!");
+                Log.i(TAG, "Payer started in service");
                 audioManager.abandonAudioFocus(audioFocusChangeListener);
 
                 notificationManager.cancel(NOTIFY_ID);
             } else {
                 notificationManager.notify(NOTIFY_ID, notification);
-                Log.i(TAG, "Notify showed");
+                Log.i("SIM_output", "Notify showed");
             }
         }
 
@@ -155,7 +153,7 @@ public class TimeService extends Service {
             return "Осталось: " + dF.format(hor) + ":" + dF.format(min) + ":" + dF.format(sec);
         }
 
-            return "Осталось: " + dF.format(min) + ":" + dF.format(sec);
+        return "Осталось: " + dF.format(min) + ":" + dF.format(sec);
     }
 
     private void createNotificationChannel() {
@@ -176,17 +174,25 @@ public class TimeService extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.i(TAG, "OnDestroy");
-
+        boolean hasStopped = false;
         if (disposable != null && !disposable.isDisposed()) {
             disposable.dispose();
+            if (sharedPreferences.contains("hasStopped")) {
+                hasStopped = sharedPreferences.getBoolean("hasStopped", false);
+            }
+            if (hasStopped) {
+                locTime = 0;
+            }
+            Log.i(TAG, "Pref status:\nlocTime: " + sharedPreferences.getLong("Time", 0) + "\nboolean: " + sharedPreferences.getBoolean("hasStopped", false));
             SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putLong("Time", loc_time);
-            editor.commit();
-            Log.i(TAG, "Disposed");
+            editor.putLong("Time", locTime);
+            editor.putBoolean("hasStopped", false);
+            editor.apply();
+            Log.i("SIM_output", "Disposed");
+
         }
 
     }
-
 
 
     public static void start(Context context, long time) {
