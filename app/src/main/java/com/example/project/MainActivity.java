@@ -6,11 +6,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.example.project.databinding.ActivityMainBinding;
@@ -25,7 +23,7 @@ import io.reactivex.schedulers.Schedulers;
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
-    protected SharedPreferences sharedPreferences;
+    private SharedPreferenceHelper sharedPreferenceHelper;
     private static final String TAG = "MyActivity_output";
     private long time;
     private boolean isRunning;
@@ -52,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         isRunning = false;
         setContentView(binding.getRoot());
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        sharedPreferenceHelper = new SharedPreferenceHelper(this);
 
 
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -154,8 +152,8 @@ public class MainActivity extends AppCompatActivity {
         if (disposable != null && !disposable.isDisposed()) {
             disposable.dispose();
         }
-        Log.i(TAG, "Service start conditions:\n SH time: " + sharedPreferences.getLong("Time", 0) + "\n locTime: " + time);
-        if (sharedPreferences.getLong("Time", 0) > 0 || time > 0) {
+        Log.i(TAG, "Service start conditions:\n SH time: " + sharedPreferenceHelper.getTime() + "\n locTime: " + time);
+        if (sharedPreferenceHelper.getTime() > 0 || time > 0) {
             TimeService.start(MainActivity.this, time);
         }
     }
@@ -164,16 +162,15 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         stopService(new Intent(MainActivity.this, TimeService.class));
-        if (sharedPreferences.getBoolean("hasStopped", false)) {
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putLong("Time", 0);
-            editor.apply();
+        if (sharedPreferenceHelper.getHasStopped()) {
+            sharedPreferenceHelper.setTime(0);
+            sharedPreferenceHelper.setHasStopped(false);
             time = 0;
         } else {
-            time = sharedPreferences.getLong("Time", 0);
+            time = sharedPreferenceHelper.getTime();
         }
         Log.i(TAG, "Received time: " + time);
-        if (time == 0) {
+        if (time <= 0) {
             zeroTimeActions();
         } else {
             disposable =

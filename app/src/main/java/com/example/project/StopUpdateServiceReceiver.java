@@ -7,15 +7,13 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 public class StopUpdateServiceReceiver extends BroadcastReceiver {
-    SharedPreferences sharedPreferences;
+    SharedPreferenceHelper sharedPreferenceHelper;
 
     @Override
     public void onReceive(Context context, Intent intent) {
         Intent service = new Intent(context, TimeService.class);
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putBoolean("hasStopped", true);
-        editor.apply();
+        sharedPreferenceHelper = new SharedPreferenceHelper(context);
+        sharedPreferenceHelper.setHasStopped(true);
         context.stopService(service);
     }
 }

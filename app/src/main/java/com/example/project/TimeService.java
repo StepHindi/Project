@@ -7,13 +7,11 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.IBinder;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
@@ -38,7 +36,7 @@ public class TimeService extends Service {
     private static final String CHANNEL_ID = "Service channel";
     protected MediaPlayer mediaPlayer;
     private Disposable disposable;
-    private SharedPreferences sharedPreferences;
+    private SharedPreferenceHelper sharedPreferenceHelper;
     private final DecimalFormat dF = new DecimalFormat("00");
 
     AudioManager audioManager;
@@ -60,7 +58,7 @@ public class TimeService extends Service {
 
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         mediaPlayer = MediaPlayer.create(this, R.raw.stopper);
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        sharedPreferenceHelper = new SharedPreferenceHelper(this);
         createNotificationChannel();
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
@@ -82,7 +80,7 @@ public class TimeService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         Log.i(TAG, "Service started");
-        locTime = (long) intent.getSerializableExtra("time") + 1;
+        locTime = (long) intent.getSerializableExtra("time");
 
         disposable =
                 Observable.fromCallable(this::updateTimer)
@@ -95,10 +93,8 @@ public class TimeService extends Service {
     }
 
     private long updateTimer() {
-        locTime --;
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putLong("Time", locTime);
-        editor.apply();
+        locTime--;
+        sharedPreferenceHelper.setTime(locTime);
         return locTime;
     }
 
@@ -171,7 +167,7 @@ public class TimeService extends Service {
         Log.i(TAG, "OnDestroy");
         if (disposable != null && !disposable.isDisposed()) {
             disposable.dispose();
-            Log.i(TAG, "Pref status:\nlocTime: " + sharedPreferences.getLong("Time", 0) + "\nboolean: " + sharedPreferences.getBoolean("hasStopped", false));
+            Log.i(TAG, "Pref status:\nlocTime: " + sharedPreferenceHelper.getTime() + "\nboolean: " + sharedPreferenceHelper.getHasStopped());
             Log.i("SIM_output", "Disposed");
 
         }
